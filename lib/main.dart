@@ -1,97 +1,60 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:flutter_blue/flutter_blue.dart';
+import 'package:http/http.dart' as http;
 
 void main() {
-  runApp(const MainApp());
+  runApp(MyApp());
 }
-
-class MainApp extends StatelessWidget {
-  const MainApp({Key? key}) : super(key: key);
-
+class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Controle de Lâmpada'),
+          backgroundColor: const Color.fromARGB(255, 236, 178, 6),
+          title: Text('Controle de LED'),
         ),
-        body: LampadaControle(),
-      ),
-    );
-  }
-}
-
-class LampadaControle extends StatefulWidget {
-  const LampadaControle({Key? key}) : super(key: key);
-
-  @override
-  _LampadaControleState createState() => _LampadaControleState();
-}
-
-class _LampadaControleState extends State<LampadaControle> {
-  final String deviceName = "Nome_Do_Seu_Arduino";
-  late BluetoothDevice device;
-  late BluetoothCharacteristic characteristic;
-
-  @override
-  void initState() {
-    super.initState();
-    FlutterBlue.instance.scanResults.listen((results) {
-      for (ScanResult result in results) {
-        if (result.device.name == deviceName) {
-          setState(() {
-            device = result.device;
-          });
-          _connectToDevice();
-        }
-      }
-    });
-    FlutterBlue.instance.startScan();
-  }
-
-  Future<void> _connectToDevice() async {
-    await device.connect();
-    List<BluetoothService> services = await device.discoverServices();
-    services.forEach((service) {
-      service.characteristics.forEach((char) {
-        if (char.uuid.toString() == "0000ffe1-0000-1000-8000-00805f9b34fb") {
-          setState(() {
-            characteristic = char;
-          });
-        }
-      });
-    });
-  }
-
-  void _sendCommand(String command) async {
-    if (characteristic != null) {
-      List<int> bytes = utf8.encode(command);
-      await characteristic.write(bytes);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          ElevatedButton(
-            onPressed: () {
-              _sendCommand('1'); // Enviar comando para ligar
-            },
-            child: const Text('Ligar Lâmpada'),
+        backgroundColor: const Color.fromARGB(
+            255, 236, 178, 6), // Defina a cor de fundo para amarelo claro
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton(
+                onPressed: () {
+                  // Enviar solicitação HTTP para ligar o LED
+                  http.get(Uri.parse('http://192.168.244.142/ligar'));
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color.fromARGB(255, 3, 151, 22),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(50.0),
+                  ),
+                  padding: const EdgeInsets.all(
+                      20.0), // Adicione espaço interno para garantir a borda arredondada
+                  minimumSize: Size(100, 100), // Ajuste conforme necessário
+                ),
+                child: const Text('LIGAR'),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  // Enviar solicitação HTTP para desligar o LED
+                  http.get(Uri.parse('http://192.168.244.142/desligar'));
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color.fromARGB(255, 234, 23, 23),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(50.0),
+                  ),
+                  padding: const EdgeInsets.all(
+                      20.0), // Adicione espaço interno para garantir a borda arredondada
+                  minimumSize: Size(100, 100), // Ajuste conforme necessário
+                ),
+                child: const Text('DESLIGAR'),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: () {
-              _sendCommand('0'); // Enviar comando para desligar
-            },
-            child: const Text('Desligar Lâmpada'),
-          ),
-        ],
+        ),
       ),
     );
   }
